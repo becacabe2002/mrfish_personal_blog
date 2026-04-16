@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bone: #f9f6f1;
+  --color-ink: #1a1a1a;
+  --color-indigo-slate: #2c3e50;
+  --color-stone-paper: #f0ede6;
+}
+
+@layer base {
+  body {
+    @apply bg-bone text-ink antialiased font-sans;
+  }
+}
