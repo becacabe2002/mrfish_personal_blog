@@ -1,133 +1,66 @@
-# Personal Blog Project Plan
+# Personal Blog Project Plan (Vue + Express + Docker)
 
 ## 1. Goal
-Build a personal blog using **Astro + React**, self-hosted with **Docker Compose**, and securely published to the internet via **Cloudflare Tunnel**, with a separate backend API for **event-sourced view tracking and anonymous reader feedback**.
+Build a modern personal blog using **Vue 3 + PrimeVue**, powered by a **TypeScript Express backend**, fully containerized with **Docker Compose**, and accessible via **Cloudflare Tunnel**.
 
 ## 2. Scope
-### In scope
-- Astro site with React components.
-- Blog post system (**Markdown/MDX content stored in Git**).
-- Basic pages: Home, Blog index, Post detail, About, 404.
-- SEO basics: sitemap, robots.txt, meta tags, Open Graph.
-- Backend API (Express.js) for post stats and interactions.
-- **Event-sourced view tracking** (counts views + total views).
-- **Automatic device detection** (mobile/desktop) for analytics.
-- **Anonymous reader feedback** (text field per post).
-- Dockerized deployment with an Nginx reverse proxy.
-- Cloudflare Tunnel for secure public access.
+### Frontend (Vue 3)
+- SPA architecture with **Vue Router**.
+- **PrimeVue** (Unstyled Mode) + **Tailwind CSS** for a bespoke Swiss-Japandi aesthetic.
+- Blog system (fetching JSON-based post metadata + rendering Markdown).
+- Interactivity: Dynamic stats, feedback forms, theme toggling.
 
-### Out of scope (initial release)
-- User accounts / Likes / Full comment threads.
-- Real-time features.
-- In-browser content editing (CMS).
-- Redis caching (not needed for v1).
+### Backend (Express + TypeScript)
+- **Event-Sourced Architecture** for view tracking and reader feedback.
+- Automatic device detection via `User-Agent`.
+- PostgreSQL as the primary event store.
+- API for post metadata and visitor stats.
 
-## 3. Architecture
-- **Frontend**: Astro (static-first) with React islands for dynamic stats/forms.
-- **Content**: Local Markdown/MDX collections in Git (Static Content).
-- **Backend API**: Standalone Express.js + TypeScript service (Dynamic Metadata).
-- **Database**: PostgreSQL as an **Event Store** (View and Feedback events).
-- **Serving**: Nginx container serving static build artifacts and proxying `/api` to the Express service.
-- **Edge access**: Cloudflare Tunnel (`cloudflared`) container.
+### Infrastructure
+- **Docker Compose**: Orchestrating Frontend, Backend, Postgres, and Nginx.
+- **Nginx**: Serving static frontend assets and proxying `/api` requests.
+- **Cloudflare Tunnel**: Secure public access without open ports.
 
-## 4. Tech Stack
-- Astro (latest stable)
-- React + TypeScript
-- Astro Content Collections
-- Node.js + Express.js + TypeScript
-- PostgreSQL
-- Docker Compose v2
-- Cloudflare Tunnel (`cloudflared`)
-- `ua-parser-js` (for automatic device detection)
+## 3. Tech Stack
+- **Frontend:** Vue 3, PrimeVue (Unstyled), Tailwind CSS, Vite, Pinia.
+- **Backend:** Node.js, Express, TypeScript, Prisma (ORM).
+- **Database:** PostgreSQL.
+- **Deployment:** Docker, Nginx, Cloudflare Tunnel.
+
+## 4. Repository Structure
+```text
+/
+├── frontend/           # Vue application (Astro + Vue)
+├── backend/            # Express API
+├── nginx/              # Nginx configuration
+├── docker-compose.yml  # Orchestration
+├── design.md           # Design System
+└── project_plan.md     # This file
+```
 
 ## 5. Milestones
 
-### Milestone 1: Project Bootstrap
-- Initialize Astro project with React integration.
-- Configure TypeScript, linting, and formatting.
-- Create base layout and navigation.
+### Milestone 1: Base Infrastructure
+- Initialize `frontend/` (Astro + Vue) and `backend/` (Express + TS).
+- Write `docker-compose.yml` and `nginx/default.conf`.
+- Verify the "Hello World" stack (Frontend -> Nginx -> Backend).
 
-### Milestone 2: Content System
-- Set up Astro content collections for Markdown/MDX.
-- Build blog listing and post detail templates.
-- Ensure images/media are handled via Astro's asset pipeline.
+### Milestone 2: Backend Development (Event Store)
+- Setup Prisma and PostgreSQL schema.
+- Implement the `POST /api/views` endpoint (Event-sourced tracking).
+- Implement the `POST /api/feedback` endpoint.
 
-### Milestone 3: Backend API & Event Store
-- Initialize Express + TypeScript service.
-- Define Event-Sourced PostgreSQL schema (`view_events`, `feedback_events`).
-- Implement automatic device detection in the view-tracking endpoint.
-- Implement anonymous feedback submission.
+### Milestone 3: Frontend Development (Design System)
+- Configure **Tailwind CSS** and **PrimeVue** (Unstyled Mode) in the Vue integration.
+- Build the core layout (Grid, Navigation, Footer) using Tailwind utility classes.
+- Implement the Blog Index and Post Detail pages.
 
-### Milestone 4: Frontend Integration
-- Build React "PostStats" component to trigger/fetch views.
-- Build React "FeedbackForm" component for anonymous submissions.
-- Integrate RSS feed and SEO metadata.
+### Milestone 4: Feature Integration
+- Connect Vue components to the Backend API for view counts and feedback.
+- Implement theme-switching logic (Light/Dark).
+- Configure RSS feed and SEO metadata (Vite-SSG or simple meta management).
 
-### Milestone 5: Containerization & Tunnel
-- Create Dockerfiles for Astro (multi-stage) and Express.
-- Write `docker-compose.yml` including Nginx and Cloudflare Tunnel.
-- Configure public routing via Cloudflare Zero Trust.
-
-## 6. Repository Structure
-```text
-.
-├─ src/             # Astro frontend
-│  ├─ content/blog/ # Markdown/MDX posts
-│  ├─ components/   # React islands (Stats, Feedback)
-│  └─ pages/
-├─ api/             # Express backend
-│  ├─ src/
-│  └─ package.json
-├─ nginx/           # Nginx config (Static + Proxy)
-├─ Dockerfile       # Frontend build
-├─ api.Dockerfile   # Backend build
-├─ docker-compose.yml
-└─ .env
-```
-
-## 7. API Endpoint Schemas
-Base path: `/api`
-
-### 7.1 View Tracking
-- `POST /api/views`
-- Request: `{ "slug": "my-post" }`
-- Logic: Automatically detects `device_type` from `User-Agent`. Deduplicates using an anonymous session hash.
-- Response: `{ "slug": "my-post", "views": 150 }`
-
-### 7.2 Post Stats
-- `GET /api/stats/:slug`
-- Returns total views for a specific slug.
-- `GET /api/stats/total`
-- Returns total views across all posts.
-
-### 7.3 Reader Feedback
-- `POST /api/feedback`
-- Request: `{ "slug": "my-post", "message": "Great read!" }`
-- `GET /api/feedback/:slug`
-- Returns approved feedback messages for a post.
-
-## 8. PostgreSQL Schema (Event-Sourced)
-```sql
-CREATE TABLE view_events (
-  id BIGSERIAL PRIMARY KEY,
-  slug TEXT NOT NULL,
-  device_type TEXT,            -- 'mobile', 'tablet', 'desktop'
-  viewer_hash TEXT,            -- Anonymous hash for deduplication
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE feedback_events (
-  id BIGSERIAL PRIMARY KEY,
-  slug TEXT NOT NULL,
-  message TEXT NOT NULL,
-  status TEXT DEFAULT 'pending', -- 'pending', 'approved', 'hidden'
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-## 9. Definition of Done (v1)
-- Blog posts render from Markdown with optimized images.
-- Views are recorded and counted automatically on page load.
-- Readers can submit anonymous text feedback.
-- Site is publicly accessible via HTTPS (Cloudflare Tunnel).
-- Deployment is fully managed by a single `docker compose up -d`.
+### Milestone 5: Deployment & Tunneling
+- Finalize Dockerfiles for production.
+- Configure `cloudflared` in Docker Compose.
+- Secure the site with Cloudflare Zero Trust.
