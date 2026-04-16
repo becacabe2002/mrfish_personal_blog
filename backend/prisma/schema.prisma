@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model ViewEvent {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  postSlug  String
+  device    String?
+  browser   String?
+  os        String?
+  userAgent String?
+
+  @@index([postSlug])
+  @@index([createdAt])
+}
+
+model FeedbackEvent {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  postSlug  String
+  content   String
+  rating    Int?
+  name      String?
+  email     String?
+
+  @@index([postSlug])
+  @@index([createdAt])
+}
