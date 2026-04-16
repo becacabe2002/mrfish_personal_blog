@@ -1,0 +1,37 @@
+services:
+  # Nginx handles both serving frontend assets and proxying API requests
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: always
+
+  # Express Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - PORT=3000
+      - DATABASE_URL=postgresql://user:password@db:5432/blogdb
+    depends_on:
+      - db
+    restart: always
+
+  # PostgreSQL Scaffold
+  db:
+    image: postgres:17-alpine
+    # Left empty for now as requested
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=blogdb
+    # volumes:
+    #   - postgres_data:/var/lib/postgresql/data
+
+# volumes:
+#   postgres_data:
